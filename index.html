@@ -106,7 +106,6 @@
     display:flex;align-items:center;justify-content:space-between;
     flex-wrap:wrap;
     gap:8px;
-    position:sticky;top:var(--page-margin);z-index:10;
     margin-bottom:var(--page-margin);
   }
   header.topbar .brand{font-weight:700;font-size:16px;}
@@ -138,6 +137,17 @@
     .form-grid{grid-template-columns:1fr;}
   }
 
+  .autocomplete-wrap{position:relative;}
+  .suggestions-dropdown{
+    position:absolute;top:100%;left:0;right:0;margin-top:4px;
+    background:#fff;border:1px solid var(--border);border-radius:8px;
+    max-height:180px;overflow-y:auto;
+    box-shadow:0 6px 16px rgba(20,25,30,.12);
+    z-index:30;
+  }
+  .suggestions-dropdown .sugg-item{padding:9px 12px;font-size:13.5px;cursor:pointer;}
+  .suggestions-dropdown .sugg-item:hover{background:#EEF3F1;}
+
   .filters{display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
   .filters .field{flex:1;min-width:130px;margin-bottom:0;}
 
@@ -162,7 +172,7 @@
   }
   .contact-card:hover{border-color:#C7CED4;}
   .ccard-row{display:grid;gap:8px;}
-  .ccard-row.row-3{grid-template-columns:1fr 1fr 1fr;}
+  .ccard-row.row-1{grid-template-columns:1fr;}
   .ccard-row.row-2{grid-template-columns:1fr 1fr;}
   .ccard-field{min-width:0;}
   .ccard-label{
@@ -171,20 +181,18 @@
   }
   .ccard-value{
     display:block;font-size:13.5px;color:var(--text);
-    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    overflow-wrap:anywhere;word-break:break-word;white-space:normal;line-height:1.35;
   }
-  .ccard-value.empty{color:#BCC3C9;}
+  .ccard-row.row-1 .ccard-value{font-size:14.5px;font-weight:600;}
+  .ccard-value.empty{color:#BCC3C9;font-weight:400;}
   .contact-card .row-actions{
     display:flex;gap:6px;margin-top:2px;
     border-top:1px solid #EEF0F2;padding-top:8px;
   }
   .row-actions button{padding:5px 9px;font-size:12px;font-weight:500;}
 
-  @media (max-width:560px){
-    .ccard-row.row-3{grid-template-columns:1fr 1fr;}
-  }
-  @media (max-width:360px){
-    .ccard-row.row-3,.ccard-row.row-2{grid-template-columns:1fr;}
+  @media (max-width:340px){
+    .ccard-row.row-2{grid-template-columns:1fr;}
   }
 
   /* Settings modal */
@@ -227,6 +235,7 @@
       </div>
       <button id="btn-login" style="width:100%">Entrar</button>
       <div class="auth-toggle">¿No tienes cuenta? <button class="link" id="show-signup">Crear una</button></div>
+      <div class="auth-toggle">¿Usas otro dispositivo? <button class="link" id="show-auth-sync">Configurar sincronización</button></div>
     </div>
 
     <div id="auth-signup" class="hidden">
@@ -265,10 +274,10 @@
       <div class="card">
         <h2 id="form-title">Agregar contacto</h2>
         <form id="contact-form" class="form-grid">
-          <div class="field span-2">
+          <div class="field span-2 autocomplete-wrap">
             <label for="f-cliente">Cliente (empresa)</label>
-            <input id="f-cliente" list="cliente-list" autocomplete="off" required>
-            <datalist id="cliente-list"></datalist>
+            <input id="f-cliente" autocomplete="off" required>
+            <div class="suggestions-dropdown hidden" id="cliente-suggestions"></div>
           </div>
           <div class="field"><label for="f-puesto">Puesto</label><input id="f-puesto"></div>
           <div class="field"><label for="f-nombre">Nombre</label><input id="f-nombre" required></div>
@@ -303,6 +312,21 @@
       </div>
     </div>
   </main>
+</div>
+
+<!-- SYNC CONFIG (available before login, so a new device can find existing users) -->
+<div class="overlay hidden" id="auth-sync-overlay">
+  <div class="modal">
+    <h2>Sincronización (Google Sheets)</h2>
+    <div class="field">
+      <label for="auth-sync-url">URL del Apps Script (Web App)</label>
+      <input id="auth-sync-url" placeholder="https://script.google.com/macros/s/…/exec">
+    </div>
+    <button id="btn-auth-save-sync" style="width:100%">Guardar y buscar usuarios</button>
+    <p class="small-note">Usa exactamente la misma URL en todos tus dispositivos: así comparten los mismos usuarios y datos. Pídesela a quien configuró el Apps Script si tú no lo hiciste.</p>
+    <div id="auth-sync-msg"></div>
+    <div class="close-row"><button class="secondary" id="btn-close-auth-sync">Cerrar</button></div>
+  </div>
 </div>
 
 <!-- SETTINGS MODAL -->
@@ -539,6 +563,24 @@ document.getElementById('show-login').onclick = ()=>{
   clearAuthError();
 };
 
+document.getElementById('show-auth-sync').onclick = ()=>{
+  document.getElementById('auth-sync-url').value = getSyncUrl();
+  document.getElementById('auth-sync-msg').innerHTML = '';
+  document.getElementById('auth-sync-overlay').classList.remove('hidden');
+};
+document.getElementById('btn-close-auth-sync').onclick = ()=>{
+  document.getElementById('auth-sync-overlay').classList.add('hidden');
+};
+document.getElementById('btn-auth-save-sync').onclick = async ()=>{
+  const msg = document.getElementById('auth-sync-msg');
+  const url = document.getElementById('auth-sync-url').value.trim();
+  setSyncUrl(url);
+  if(!url){ msg.innerHTML = '<div class="msg">URL borrada. Este dispositivo solo verá usuarios locales.</div>'; return; }
+  msg.innerHTML = '<div class="msg">Buscando usuarios…</div>';
+  await populateUserList();
+  msg.innerHTML = '<div class="msg ok">Listo. Si tu usuario existe en esa cuenta de sincronización, ya puedes iniciar sesión con él aquí.</div>';
+};
+
 async function populateUserList(){
   let users = getLocalUsers();
   if(getSyncUrl()){
@@ -562,9 +604,26 @@ document.getElementById('btn-login').onclick = async ()=>{
   const username = document.getElementById('login-user').value.trim();
   const password = document.getElementById('login-pass').value;
   if(!username || !password){ showAuthError('Escribe usuario y contraseña.'); return; }
-  const users = getLocalUsers();
-  const rec = users.find(u=>u.username===username);
-  if(!rec){ showAuthError('Ese usuario no existe. Crea una cuenta.'); return; }
+  let rec = getLocalUsers().find(u=>u.username===username);
+  if(!rec && getSyncUrl()){
+    // not cached on this device yet — ask the cloud directly before giving up
+    const cloudUsers = await cloudGetUsers();
+    if(cloudUsers){
+      cloudUsers.forEach(u=>upsertLocalUser({
+        username:u.username, salt:u.salt, iterations:Number(u.iterations)||ITERATIONS,
+        checkIv:u.checkIv, checkCt:u.checkCt, updatedAt:Number(u.updatedAt)||0
+      }));
+    }
+    rec = getLocalUsers().find(u=>u.username===username);
+  }
+  if(!rec){
+    if(!getSyncUrl()){
+      showAuthError('Ese usuario no existe en este dispositivo. Si ya lo creaste en otro dispositivo, ve a Ajustes y configura la misma URL de sincronización antes de iniciar sesión aquí.');
+    }else{
+      showAuthError('Ese usuario no existe. Crea una cuenta.');
+    }
+    return;
+  }
   try{
     const salt = base64ToBytes(rec.salt);
     const key = await deriveKey(password, salt, rec.iterations||ITERATIONS);
@@ -726,19 +785,49 @@ function refreshClienteOptions(keepSelection){
   selCliente.innerHTML = '<option value="">Todos</option>' + clientes.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
   selCliente.value = clientes.includes(prevCliente) ? prevCliente : '';
 }
+let clientesCache = [];
 function refreshClienteDatalist(){
-  const clientes = getDistinct('cliente', null);
-  document.getElementById('cliente-list').innerHTML =
-    clientes.map(c=>`<option value="${escapeHtml(c)}">`).join('');
+  clientesCache = getDistinct('cliente', null);
 }
 selAsesor.addEventListener('change', ()=>{ refreshClienteOptions(false); renderTable(); });
 selCliente.addEventListener('change', renderTable);
+
+/* ---------- custom cliente autocomplete (works on all devices/browsers) ---------- */
+const fCliente = document.getElementById('f-cliente');
+const clienteSuggBox = document.getElementById('cliente-suggestions');
+
+function showClienteSuggestions(){
+  const q = fCliente.value.trim().toLowerCase();
+  const matches = (q ? clientesCache.filter(c=>c.toLowerCase().includes(q)) : clientesCache).slice(0,8);
+  if(matches.length === 0){ hideClienteSuggestions(); return; }
+  clienteSuggBox.innerHTML = matches.map(c=>`<div class="sugg-item">${escapeHtml(c)}</div>`).join('');
+  clienteSuggBox.classList.remove('hidden');
+  clienteSuggBox.querySelectorAll('.sugg-item').forEach((item, i)=>{
+    item.addEventListener('mousedown', (e)=>{
+      e.preventDefault();
+      fCliente.value = matches[i];
+      hideClienteSuggestions();
+    });
+    item.addEventListener('touchstart', (e)=>{
+      e.preventDefault();
+      fCliente.value = matches[i];
+      hideClienteSuggestions();
+    });
+  });
+}
+function hideClienteSuggestions(){
+  clienteSuggBox.classList.add('hidden');
+  clienteSuggBox.innerHTML = '';
+}
+fCliente.addEventListener('input', showClienteSuggestions);
+fCliente.addEventListener('focus', showClienteSuggestions);
+fCliente.addEventListener('blur', ()=> setTimeout(hideClienteSuggestions, 150));
 
 function ccardField(label, value){
   const v = value ? escapeHtml(value) : '';
   return `<div class="ccard-field">
       <span class="ccard-label">${label}</span>
-      <span class="ccard-value${v ? '' : ' empty'}" title="${v}">${v || '—'}</span>
+      <span class="ccard-value${v ? '' : ' empty'}">${v || '—'}</span>
     </div>`;
 }
 
@@ -765,16 +854,18 @@ function renderTable(){
 
   container.innerHTML = rows.map(r=>`
     <div class="contact-card">
-      <div class="ccard-row row-3">
+      <div class="ccard-row row-1">
         ${ccardField('Cliente', r.cliente)}
-        ${ccardField('Puesto', r.puesto)}
+      </div>
+      <div class="ccard-row row-2">
         ${ccardField('Nombre', r.nombre)}
+        ${ccardField('Puesto', r.puesto)}
       </div>
       <div class="ccard-row row-2">
         ${ccardField('Teléfono', r.telefono)}
         ${ccardField('Correo', r.correo)}
       </div>
-      <div class="ccard-row">
+      <div class="ccard-row row-1">
         ${ccardField('Dirección', r.direccion)}
       </div>
       <div class="row-actions">
