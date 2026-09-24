@@ -235,7 +235,6 @@
       </div>
       <button id="btn-login" style="width:100%">Entrar</button>
       <div class="auth-toggle">¿No tienes cuenta? <button class="link" id="show-signup">Crear una</button></div>
-      <div class="auth-toggle">¿Usas otro dispositivo? <button class="link" id="show-auth-sync">Configurar sincronización</button></div>
     </div>
 
     <div id="auth-signup" class="hidden">
@@ -314,42 +313,19 @@
   </main>
 </div>
 
-<!-- SYNC CONFIG (available before login, so a new device can find existing users) -->
-<div class="overlay hidden" id="auth-sync-overlay">
-  <div class="modal">
-    <h2>Sincronización (Google Sheets)</h2>
-    <div class="field">
-      <label for="auth-sync-url">URL del Apps Script (Web App)</label>
-      <input id="auth-sync-url" placeholder="https://script.google.com/macros/s/…/exec">
-    </div>
-    <button id="btn-auth-save-sync" style="width:100%">Guardar y buscar usuarios</button>
-    <p class="small-note">Usa exactamente la misma URL en todos tus dispositivos: así comparten los mismos usuarios y datos. Pídesela a quien configuró el Apps Script si tú no lo hiciste.</p>
-    <div id="auth-sync-msg"></div>
-    <div class="close-row"><button class="secondary" id="btn-close-auth-sync">Cerrar</button></div>
-  </div>
-</div>
-
 <!-- SETTINGS MODAL -->
 <div class="overlay hidden" id="settings-overlay">
   <div class="modal">
     <h2>Ajustes</h2>
 
-    <h3 style="border-top:none;padding-top:0;margin-top:0;">Diseño</h3>
     <div class="field">
       <label for="page-margin-range">Margen de pantalla: <span id="page-margin-value">10</span>px</label>
       <input type="range" id="page-margin-range" min="0" max="40" step="1" value="10">
     </div>
 
-    <h3>Sincronización (Google Sheets)</h3>
-    <div class="field">
-      <label for="sync-url">URL del Apps Script (Web App)</label>
-      <input id="sync-url" placeholder="https://script.google.com/macros/s/…/exec">
-    </div>
-    <div class="form-actions">
-      <button id="btn-save-sync">Guardar</button>
-      <button class="secondary" id="btn-sync-now">Sincronizar ahora</button>
-    </div>
-    <p class="small-note">Ver README del repo para desplegar el Apps Script gratis. La URL es la misma para todos los usuarios; cada quien conserva sus datos por separado.</p>
+    <h3 style="margin-top:18px;">Sincronización</h3>
+    <p class="small-note">Tus datos se sincronizan automáticamente entre tus dispositivos. Usa este botón si quieres forzar una actualización ahora mismo.</p>
+    <button id="btn-sync-now">Sincronizar ahora</button>
     <div id="sync-msg"></div>
 
     <h3>Cambiar contraseña</h3>
@@ -467,8 +443,9 @@ function upsertLocalUser(rec){
 }
 
 /* ---------- Google Sheets sync (Apps Script) ---------- */
-function getSyncUrl(){ return localStorage.getItem('crm_sync_url') || ''; }
-function setSyncUrl(url){ localStorage.setItem('crm_sync_url', url || ''); }
+/* Fixed for every device — nobody needs to configure or share a link. */
+const SYNC_URL = 'https://script.google.com/macros/s/AKfycbxXo19Df_nmlx0r127qzWO90MjOV8qa6ft7EwgoSTKNQGeWOhXkXxwAWwkiKHcQwG5d-A/exec';
+function getSyncUrl(){ return SYNC_URL; }
 
 async function apiCall(action, payload){
   const url = getSyncUrl();
@@ -925,6 +902,8 @@ document.getElementById('btn-save-sync').onclick = ()=>{
 };
 document.getElementById('btn-sync-now').onclick = async ()=>{
   document.getElementById('sync-msg').innerHTML = '<div class="msg">Sincronizando…</div>';
+  const myRec = getLocalUsers().find(u=>u.username===currentUser);
+  if(myRec) await cloudSaveUser(myRec);
   await pushCurrentDb();
   const cloudUsers = await cloudGetUsers();
   if(cloudUsers) cloudUsers.forEach(u=>upsertLocalUser({
