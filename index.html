@@ -305,11 +305,20 @@ async function cloudGetUsers(){
   }catch(e){ setSyncState('warn','Sin conexión'); return null; }
 }
 async function cloudSaveUser(user){ try{ await apiCall('saveUser', {user}); setSyncState('ok','Sincronizado'); }catch(e){ setSyncState('warn','Sin conexión'); } }
-async function cloudGetData(username){ try{ return await apiCall('getData', {username}); }catch(e){ setSyncState('warn','Sin conexión'); return null; } }
-async function cloudSaveData(record){ try{ await apiCall('saveData', {record}); setSyncState('ok','Sincronizado'); }catch(e){ setSyncState('warn','Sin conexión'); } }
+async function cloudSaveData(record){
+  try{
+    const r = await apiCall('saveData', {record});
+    if(r && (r.error || r.ok===false || r.success===false)){ console.error('saveData', r); setSyncState('warn','Error al guardar en la nube'); return false; }
+    return true;
+  }catch(e){ console.error(e); setSyncState('warn','Sin conexión'); return false; }
+}
 
 /* ---------- estado ---------- */
-let SQL = null, db = null, currentUser = null, currentKey = null, editingId = null, syncTimer = null;
+let SQL = null, db = null, currentUser = null, currentKey = null, editingId = null;
+let dirty = false;        // hay cambios locales que aún no están en la nube
+let syncedOnce = false;   // ya se leyó la nube en esta sesión (hasta entonces NO se sube nada)
+let changeSeq = 0, running = null, syncAgain = false, forceNext = false;
+let pushTimer = null, retryTimer = null, persisting = Promise.resolve();
 
 const SCHEMA = `CREATE TABLE IF NOT EXISTS contactos (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -332,58 +341,152 @@ function runQuery(sql, params){
 }
 function runExec(sql, params){ db.run(sql, params||[]); }
 
-/* ---------- persistencia ---------- */
-function scheduleCloudPush(){ clearTimeout(syncTimer); syncTimer = setTimeout(pushCurrentDb, 700); }
+const COLS = 'asesor,cliente,puesto,nombre,telefono,correo,direccion';
+function contactKey(r){
+  return [r.asesor,r.cliente,r.puesto,r.nombre,r.telefono,r.correo,r.direccion].map(x=>String(x||'').trim().toLowerCase()).join('|');
+}
+// Copia a la base actual los contactos de "other" que aún no existen aquí (nunca borra nada)
+function mergeFrom(other){
+  const have = new Set(runQuery(`SELECT ${COLS} FROM contactos`).map(contactKey));
+  const st = other.prepare(`SELECT ${COLS} FROM contactos`);
+  let added = 0;
+  while(st.step()){
+    const r = st.getAsObject(), k = contactKey(r);
+    if(have.has(k)) continue;
+    have.add(k);
+    runExec(`INSERT INTO contactos (${COLS}) VALUES (?,?,?,?,?,?,?)`,
+      [r.asesor,r.cliente,r.puesto,r.nombre,r.telefono,r.correo,r.direccion]);
+    added++;
+  }
+  st.free();
+  return added;
+}
+
+/* ---------- guardado local (en cola: nunca se cruzan dos escrituras) ---------- */
 async function persistLocal(){
   const enc = await encryptBytes(currentKey, db.export());
-  await idbSet({ username: currentUser, iv: enc.iv, data: enc.data, updatedAt: Date.now() });
+  await idbSet({ username: currentUser, iv: enc.iv, data: enc.data, updatedAt: Date.now(), dirty });
 }
-async function pushCurrentDb(){
-  const rec = await idbGet(currentUser);
-  if(!rec) return;
-  await cloudSaveData({ username: currentUser, iv: rec.iv, ciphertext: rec.data, updatedAt: rec.updatedAt });
+function enqueuePersist(){
+  persisting = persisting.then(persistLocal, persistLocal);
+  return persisting;
 }
-async function saveState(){ await persistLocal(); scheduleCloudPush(); }
+async function idbMarkClean(username, updatedAt){
+  const d = await openIDB();
+  return new Promise((resolve,reject)=>{
+    const tx = d.transaction('userdata','readwrite');
+    const os = tx.objectStore('userdata');
+    const g = os.get(username);
+    g.onsuccess = ()=>{ const rec = g.result; if(rec && rec.updatedAt === updatedAt){ rec.dirty = false; os.put(rec); } };
+    tx.oncomplete = ()=>resolve();
+    tx.onerror = ()=>reject(tx.error);
+  });
+}
+function saveState(){
+  dirty = true; changeSeq++;
+  const p = enqueuePersist();
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(()=>syncNow(), 700);
+  return p;
+}
+
+/* ---------- sincronización con la nube ---------- */
+function scheduleRetry(){ clearTimeout(retryTimer); retryTimer = setTimeout(()=>syncNow(), 15000); }
+
+async function pullFromCloud(){
+  setSyncState('warn', 'Sincronizando…');
+  let r;
+  try{ r = await apiCall('getData', {username: currentUser}); }
+  catch(e){ console.error(e); setSyncState('warn','Sin conexión'); return false; }
+  const notFound = r && r.error && /no (existe|encontr)|not found|sin datos/i.test(String(r.error));
+  if(r && r.error && !notFound){ console.error(r); setSyncState('warn','Error al sincronizar'); return false; }
+  if(!r || !r.ciphertext){
+    // La nube todavía no tiene datos de este usuario: es seguro subir lo local
+    syncedOnce = true;
+    if(runQuery('SELECT COUNT(*) AS n FROM contactos')[0].n > 0) dirty = true;
+    return true;
+  }
+  let cdb;
+  try{
+    cdb = new SQL.Database(await decryptBytes(currentKey, r.iv, r.ciphertext));
+    cdb.run(SCHEMA);
+  }catch(e){
+    console.error(e);
+    setSyncState('warn','No se pudo leer la copia de la nube');
+    return false; // no se sube nada para no pisar la copia de la nube
+  }
+  if(dirty){
+    mergeFrom(cdb);            // hay cambios locales: se combinan sin perder ninguno
+    cdb.close();
+  }else{
+    const old = db; db = cdb; old.close();   // sin cambios locales: la nube manda
+  }
+  await enqueuePersist();
+  refreshFilters(true);
+  renderTable();
+  syncedOnce = true;
+  return true;
+}
+
+function syncNow(force){
+  if(running){ syncAgain = true; if(force) forceNext = true; return running; }
+  forceNext = !!force;
+  running = (async ()=>{
+    try{
+      do{
+        syncAgain = false;
+        if(!syncedOnce || forceNext){
+          forceNext = false;
+          if(!(await pullFromCloud())){ scheduleRetry(); return; }
+        }
+        if(dirty){
+          const seq = changeSeq;
+          await persisting.catch(()=>{});
+          const rec = await idbGet(currentUser);
+          if(rec){
+            const ok = await cloudSaveData({ username: currentUser, iv: rec.iv, ciphertext: rec.data, updatedAt: rec.updatedAt });
+            if(!ok){ scheduleRetry(); return; }
+            await idbMarkClean(currentUser, rec.updatedAt);
+            if(seq === changeSeq) dirty = false; else syncAgain = true;
+          }
+        }
+      }while(syncAgain);
+      setSyncState('ok','Sincronizado');
+    }finally{ running = null; }
+  })();
+  return running;
+}
+
+document.addEventListener('visibilitychange', ()=>{ if(currentUser && document.visibilityState==='hidden' && dirty) syncNow(); });
+window.addEventListener('online', ()=>{ if(currentUser) syncNow(); });
 
 /* ---------- entrada a la app (la sesión ya fue validada en login.html) ---------- */
 async function loginAs(username, key){
   currentUser = username;
   currentKey = key;
+  dirty = false; syncedOnce = false;
   SQL = SQL || await initSqlJs({ locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${f}` });
 
+  db = null;
   const localRec = await idbGet(username);
   if(localRec){
-    try{ db = new SQL.Database(await decryptBytes(key, localRec.iv, localRec.data)); }
-    catch(e){ db = new SQL.Database(); }
-  }else{
-    db = new SQL.Database();
+    try{
+      db = new SQL.Database(await decryptBytes(key, localRec.iv, localRec.data));
+      dirty = !!localRec.dirty;
+    }catch(e){
+      // No se pisa lo que no se pudo abrir: se guarda un respaldo antes de continuar
+      console.error(e);
+      await idbSet(Object.assign({}, localRec, { username: username+'::respaldo-'+Date.now() }));
+    }
   }
+  if(!db){ db = new SQL.Database(); dirty = false; }
   db.run(SCHEMA);
-  await persistLocal();
 
   $('screen-app').classList.remove('hidden');
   $('current-user-label').textContent = username;
   refreshFilters();
   renderTable();
-  syncFromCloudInBackground(username, key, localRec);
-}
-
-async function syncFromCloudInBackground(username, key, localRec){
-  setSyncState('warn', 'Sincronizando…');
-  const cloudRec = await cloudGetData(username);
-  if(currentUser !== username) return;
-  if(!cloudRec || !cloudRec.ciphertext){ setSyncState('warn', 'Sin conexión'); return; }
-  const cloudIsNewer = !localRec || Number(cloudRec.updatedAt||0) > Number(localRec.updatedAt||0);
-  if(cloudIsNewer){
-    try{
-      db = new SQL.Database(await decryptBytes(key, cloudRec.iv, cloudRec.ciphertext));
-      db.run(SCHEMA);
-      await persistLocal();
-      refreshFilters();
-      renderTable();
-    }catch(e){ /* copia de la nube corrupta o incompatible: se conserva lo que ya se ve */ }
-  }
-  setSyncState('ok', 'Sincronizado');
+  syncNow();
 }
 
 $('btn-logout').onclick = ()=>{
@@ -412,9 +515,10 @@ form.addEventListener('submit', async (e)=>{
       [vals.cliente,vals.puesto,vals.nombre,vals.telefono,vals.correo,vals.direccion,vals.asesor]);
   }
   form.reset();
-  await saveState();
   refreshFilters(true);
   renderTable();
+  try{ await saveState(); }
+  catch(err){ console.error(err); alert('No se pudo guardar en este dispositivo: '+(err && err.message || err)); }
 });
 
 $('btn-cancel-edit').onclick = ()=>{ exitEditMode(); form.reset(); };
@@ -577,12 +681,16 @@ marginRange.addEventListener('input', ()=>{
 
 $('btn-sync-now').onclick = async ()=>{
   $('sync-msg').innerHTML = '<div class="msg">Sincronizando…</div>';
-  const myRec = getLocalUsers().find(u=>u.username===currentUser);
-  if(myRec) await cloudSaveUser(myRec);
-  await pushCurrentDb();
+  await syncNow(true);
   const cloudUsers = await cloudGetUsers();
-  if(cloudUsers) cloudUsers.forEach(upsertLocalUser);
-  $('sync-msg').innerHTML = '<div class="msg ok">Sincronizado.</div>';
+  if(cloudUsers){
+    const myRec = getLocalUsers().find(u=>u.username===currentUser);
+    if(myRec && !cloudUsers.some(u=>u.username===currentUser)) await cloudSaveUser(myRec);
+    cloudUsers.forEach(upsertLocalUser);
+  }
+  $('sync-msg').innerHTML = (syncedOnce && !dirty)
+    ? '<div class="msg ok">Sincronizado.</div>'
+    : '<div class="msg err">No se pudo sincronizar. Tus cambios siguen guardados en este dispositivo y se reintentará solo.</div>';
 };
 
 $('btn-change-pass').onclick = async ()=>{
@@ -590,6 +698,7 @@ $('btn-change-pass').onclick = async ()=>{
   const current = $('cp-current').value;
   const next = $('cp-new').value;
   if(!next){ msg.innerHTML = '<div class="msg err">Escribe la nueva contraseña.</div>'; return; }
+  if(!syncedOnce){ msg.innerHTML = '<div class="msg err">Espera a que termine la sincronización e inténtalo de nuevo.</div>'; return; }
   const rec = getLocalUsers().find(u=>u.username===currentUser);
   try{
     const oldKey = await deriveKey(current, base64ToBytes(rec.salt), rec.iterations||ITERATIONS);
