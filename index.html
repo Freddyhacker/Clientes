@@ -9,105 +9,24 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
 <style>
-  :root{
-    --bg:#F5F6F8;
-    --surface:#FFFFFF;
-    --text:#1B2430;
-    --text-soft:#5B6472;
-    --accent:#2C6E63;
-    --accent-dark:#1F4E46;
-    --border:#E1E4E8;
-    --danger:#B3261E;
-    --danger-bg:#FBEAEA;
-    --ok:#2C6E63;
-    --radius:10px;
-    --page-margin:10px;
-  }
+  :root{--bg:#F5F6F8;--surface:#FFFFFF;--text:#1B2430;--text-soft:#5B6472;--accent:#2C6E63;--accent-dark:#1F4E46;--border:#E1E4E8;--danger:#B3261E;--danger-bg:#FBEAEA;--ok:#2C6E63;--radius:10px;--page-margin:10px;}
   *{box-sizing:border-box;}
   html,body{height:100%;}
-  body{
-    margin:0;
-    font-family:'Inter',system-ui,sans-serif;
-    background:var(--bg);
-    color:var(--text);
-    min-height:100vh;
-  }
+  body{margin:0;font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
   .mono{font-family:'IBM Plex Mono',monospace;}
-  button{
-    font-family:inherit;
-    cursor:pointer;
-    border:none;
-    border-radius:8px;
-    padding:10px 16px;
-    font-size:14px;
-    font-weight:600;
-    background:var(--accent);
-    color:#fff;
-    transition:background .15s ease;
-  }
+  button{font-family:inherit;cursor:pointer;border:none;border-radius:8px;padding:10px 16px;font-size:14px;font-weight:600;background:var(--accent);color:#fff;transition:background .15s ease;}
   button:hover{background:var(--accent-dark);}
-  button.secondary{
-    background:transparent;
-    color:var(--text-soft);
-    border:1px solid var(--border);
-  }
+  button.secondary{background:transparent;color:var(--text-soft);border:1px solid var(--border);}
   button.secondary:hover{background:#EEF1F0;color:var(--text);}
-  button.danger{background:var(--danger);}
-  button.danger:hover{background:#8C1F19;}
-  button.link{background:none;color:var(--accent);padding:0;font-weight:500;}
-  button.link:hover{background:none;text-decoration:underline;}
-  input,select{
-    width:100%;
-    padding:9px 11px;
-    border:1px solid var(--border);
-    border-radius:8px;
-    font-family:inherit;
-    font-size:14px;
-    background:#fff;
-    color:var(--text);
-  }
+  input,select{width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:14px;background:#fff;color:var(--text);}
   input[type="range"]{padding:0;accent-color:var(--accent);}
   input:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px;}
   label{font-size:12.5px;font-weight:600;color:var(--text-soft);display:block;margin-bottom:4px;}
   .field{margin-bottom:12px;}
   .hidden{display:none !important;}
 
-  /* Auth screen */
-  #screen-auth{
-    min-height:100vh;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:var(--page-margin);
-  }
-  .auth-card{
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:16px;
-    padding:36px 32px;
-    width:100%;
-    max-width:380px;
-  }
-  .auth-card h1{font-size:20px;margin:0 0 4px;}
-  .auth-card p.sub{color:var(--text-soft);font-size:13px;margin:0 0 24px;}
-  .auth-error{
-    background:var(--danger-bg);color:var(--danger);
-    padding:10px 12px;border-radius:8px;font-size:13px;margin-bottom:14px;
-  }
-  .auth-toggle{text-align:center;margin-top:16px;font-size:13px;color:var(--text-soft);}
-
-  /* App shell */
   #screen-app{min-height:100vh;padding:var(--page-margin);}
-  header.topbar{
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:12px;
-    padding:12px 18px;
-    display:flex;align-items:center;justify-content:space-between;
-    flex-wrap:wrap;
-    gap:8px;
-    margin-bottom:var(--page-margin);
-  }
+  header.topbar{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:var(--page-margin);}
   header.topbar .brand{font-weight:700;font-size:16px;}
   header.topbar .brand span{color:var(--accent);}
   .topbar-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
@@ -119,103 +38,48 @@
   main{max-width:1100px;margin:0 auto;padding:0 0 40px;}
   .grid{display:grid;grid-template-columns:320px 1fr;gap:var(--page-margin);align-items:start;}
   @media (max-width:820px){.grid{grid-template-columns:1fr;}}
-
-  .card{
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:var(--radius);
-    padding:18px;
-  }
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;}
   .card h2{font-size:15px;margin:0 0 14px;}
   .form-actions{display:flex;gap:8px;margin-top:4px;}
-
-  /* Compact form grid */
   .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 10px;}
   .form-grid .field{margin-bottom:10px;}
   .form-grid .span-2{grid-column:1 / -1;}
-  @media (max-width:420px){
-    .form-grid{grid-template-columns:1fr;}
-  }
+  @media (max-width:420px){.form-grid{grid-template-columns:1fr;}}
 
   .autocomplete-wrap{position:relative;}
-  .suggestions-dropdown{
-    position:absolute;top:100%;left:0;right:0;margin-top:4px;
-    background:#fff;border:1px solid var(--border);border-radius:8px;
-    max-height:180px;overflow-y:auto;-webkit-overflow-scrolling:touch;
-    box-shadow:0 6px 16px rgba(20,25,30,.12);
-    z-index:30;
-  }
+  .suggestions-dropdown{position:absolute;top:100%;left:0;right:0;margin-top:4px;background:#fff;border:1px solid var(--border);border-radius:8px;max-height:180px;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 6px 16px rgba(20,25,30,.12);z-index:30;}
   .suggestions-dropdown .sugg-item{padding:9px 12px;font-size:13.5px;cursor:pointer;}
   .suggestions-dropdown .sugg-item:hover{background:#EEF3F1;}
 
   .filters{display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
   .filters .field{flex:1;min-width:130px;margin-bottom:0;}
-
   .table-wrap{overflow-x:visible;}
   .count-badge{font-size:12px;color:var(--text-soft);margin-bottom:10px;}
   .empty-state{padding:30px 10px;text-align:center;color:var(--text-soft);font-size:13.5px;}
 
-  /* Contact cards */
-  .cards-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
-    gap:10px;
-  }
-  .contact-card{
-    border:1px solid var(--border);
-    border-radius:10px;
-    padding:12px 14px;
-    background:#fff;
-    display:flex;
-    flex-direction:column;
-    gap:8px;
-  }
+  .cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;}
+  .contact-card{border:1px solid var(--border);border-radius:10px;padding:12px 14px;background:#fff;display:flex;flex-direction:column;gap:8px;}
   .contact-card:hover{border-color:#C7CED4;}
   .ccard-row{display:grid;gap:8px;}
   .ccard-row.row-1{grid-template-columns:1fr;}
   .ccard-row.row-2{grid-template-columns:0.8fr 1.2fr;}
   .ccard-field{min-width:0;}
-  .ccard-label{
-    display:block;font-size:10px;font-weight:600;color:var(--text-soft);
-    text-transform:uppercase;letter-spacing:.03em;margin-bottom:2px;
-  }
-  .ccard-value{
-    display:block;font-size:13.5px;color:var(--text);
-    overflow-wrap:anywhere;word-break:break-word;white-space:normal;line-height:1.35;
-  }
+  .ccard-label{display:block;font-size:10px;font-weight:600;color:var(--text-soft);text-transform:uppercase;letter-spacing:.03em;margin-bottom:2px;}
+  .ccard-value{display:block;font-size:13.5px;color:var(--text);overflow-wrap:anywhere;word-break:break-word;white-space:normal;line-height:1.35;}
   .ccard-row.row-1 .ccard-value{font-size:14.5px;font-weight:600;}
   .ccard-value.empty{color:#BCC3C9;font-weight:400;}
-
-  .ccard-bottom{
-    display:flex;justify-content:space-between;align-items:flex-end;gap:8px;
-    margin-top:2px;border-top:1px solid #EEF0F2;padding-top:8px;
-  }
+  .ccard-bottom{display:flex;justify-content:space-between;align-items:flex-end;gap:8px;margin-top:2px;border-top:1px solid #EEF0F2;padding-top:8px;}
   .ccard-bottom .ccard-field{flex:1;min-width:0;}
   .ccard-icons{display:flex;gap:5px;flex-shrink:0;}
-  .icon-btn{
-    background:transparent;border:1px solid var(--border);border-radius:8px;
-    width:30px;height:30px;padding:0;font-size:14px;line-height:1;
-    display:flex;align-items:center;justify-content:center;flex-shrink:0;
-  }
+  .icon-btn{background:transparent;border:1px solid var(--border);border-radius:8px;width:30px;height:30px;padding:0;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
   .icon-btn:hover{background:#EEF1F0;border-color:#C7CED4;}
   .icon-btn.danger:hover{background:var(--danger-bg);border-color:var(--danger);}
+  @media (max-width:340px){.ccard-row.row-2{grid-template-columns:1fr;}}
 
-  @media (max-width:340px){
-    .ccard-row.row-2{grid-template-columns:1fr;}
-  }
-
-  /* Settings modal */
-  .overlay{
-    position:fixed;inset:0;background:rgba(20,25,30,.45);
-    display:flex;align-items:flex-start;justify-content:center;
-    padding:40px 20px;overflow-y:auto;z-index:100;
-  }
-  .modal{
-    background:var(--surface);border-radius:14px;max-width:480px;width:100%;
-    padding:26px 26px 22px;
-  }
+  .overlay{position:fixed;inset:0;background:rgba(20,25,30,.45);display:flex;align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto;z-index:100;}
+  .modal{background:var(--surface);border-radius:14px;max-width:480px;width:100%;padding:26px 26px 22px;}
   .modal h2{margin:0 0 18px;font-size:17px;}
-  .modal h3{font-size:13px;color:var(--text-soft);margin:22px 0 10px;text-transform:none;border-top:1px solid var(--border);padding-top:18px;}
+  .modal h3{font-size:13px;color:var(--text-soft);margin:22px 0 10px;border-top:1px solid var(--border);padding-top:18px;}
   .modal .close-row{display:flex;justify-content:flex-end;margin-top:20px;}
   .small-note{font-size:12px;color:var(--text-soft);margin-top:6px;line-height:1.5;}
   .msg{font-size:13px;padding:8px 10px;border-radius:8px;margin-top:10px;}
@@ -225,52 +89,11 @@
 </head>
 <body>
 
-<!-- AUTH SCREEN -->
-<div id="screen-auth">
-  <div class="auth-card">
-    <h1 id="auth-title">Iniciar sesión</h1>
-    <p class="sub" id="auth-sub">Directorio de clientes — acceso privado</p>
-    <div id="auth-error" class="auth-error hidden"></div>
-
-    <div id="auth-login">
-      <div class="field">
-        <label for="login-user">Usuario</label>
-        <input list="user-list" id="login-user" autocomplete="username" placeholder="tu usuario">
-        <datalist id="user-list"></datalist>
-      </div>
-      <div class="field">
-        <label for="login-pass">Contraseña</label>
-        <input type="password" id="login-pass" autocomplete="current-password">
-      </div>
-      <button id="btn-login" style="width:100%">Entrar</button>
-      <div class="auth-toggle">¿No tienes cuenta? <button class="link" id="show-signup">Crear una</button></div>
-    </div>
-
-    <div id="auth-signup" class="hidden">
-      <div class="field">
-        <label for="signup-user">Elige un usuario</label>
-        <input id="signup-user" autocomplete="username">
-      </div>
-      <div class="field">
-        <label for="signup-pass">Elige una contraseña</label>
-        <input type="password" id="signup-pass" autocomplete="new-password">
-      </div>
-      <div class="field">
-        <label for="signup-pass2">Confirma la contraseña</label>
-        <input type="password" id="signup-pass2" autocomplete="new-password">
-      </div>
-      <button id="btn-signup" style="width:100%">Crear cuenta</button>
-      <div class="auth-toggle">¿Ya tienes cuenta? <button class="link" id="show-login">Iniciar sesión</button></div>
-    </div>
-  </div>
-</div>
-
-<!-- APP SCREEN -->
 <div id="screen-app" class="hidden">
   <header class="topbar">
     <div class="brand">Directorio de <span>Clientes</span></div>
     <div class="topbar-right">
-      <div class="sync-status" id="sync-status"><span class="dot" id="sync-dot"></span><span id="sync-text">Local</span></div>
+      <div class="sync-status"><span class="dot" id="sync-dot"></span><span id="sync-text">Local</span></div>
       <span class="mono" id="current-user-label" style="font-size:13px;color:var(--text-soft);"></span>
       <button class="secondary" id="btn-settings">Ajustes</button>
       <button class="secondary" id="btn-logout">Salir</button>
@@ -303,14 +126,8 @@
       <div class="card">
         <h2>Directorio</h2>
         <div class="filters">
-          <div class="field">
-            <label for="filter-asesor">Asesor</label>
-            <select id="filter-asesor"></select>
-          </div>
-          <div class="field">
-            <label for="filter-cliente">Cliente</label>
-            <select id="filter-cliente"></select>
-          </div>
+          <div class="field"><label for="filter-asesor">Asesor</label><select id="filter-asesor"></select></div>
+          <div class="field"><label for="filter-cliente">Cliente</label><select id="filter-cliente"></select></div>
         </div>
         <div class="count-badge" id="result-count"></div>
         <div class="table-wrap">
@@ -322,11 +139,9 @@
   </main>
 </div>
 
-<!-- SETTINGS MODAL -->
 <div class="overlay hidden" id="settings-overlay">
   <div class="modal">
     <h2>Ajustes</h2>
-
     <div class="field">
       <label for="page-margin-range">Margen de pantalla: <span id="page-margin-value">10</span>px</label>
       <input type="range" id="page-margin-range" min="0" max="40" step="1" value="10">
@@ -345,7 +160,7 @@
 
     <h3>Agregar usuario nuevo</h3>
     <p class="small-note">Crea una cuenta con su propia lista de clientes, independiente de la tuya.</p>
-    <div class="field"><label for="nu-user">Usuario</label><input id="nu-user"></div>
+    <div class="field"><label for="nu-user">Usuario</label><input id="nu-user" autocapitalize="none" autocorrect="off" spellcheck="false"></div>
     <div class="field"><label for="nu-pass">Contraseña</label><input type="password" id="nu-pass"></div>
     <button id="btn-new-user">Crear usuario</button>
     <div id="nu-msg"></div>
@@ -364,8 +179,10 @@
 
 <script>
 (function(){
+const $ = id => document.getElementById(id);
+const LOGIN_URL = 'login.html';
 
-/* ---------- helpers: base64 ---------- */
+/* ---------- base64 ---------- */
 function bytesToBase64(bytes){
   let bin=''; const chunk=0x8000;
   for(let i=0;i<bytes.length;i+=chunk){ bin+=String.fromCharCode.apply(null, bytes.subarray(i,i+chunk)); }
@@ -377,7 +194,7 @@ function base64ToBytes(b64){
   return bytes;
 }
 
-/* ---------- page margin (display setting) ---------- */
+/* ---------- margen de pantalla ---------- */
 function getPageMargin(){
   const v = parseInt(localStorage.getItem('crm_page_margin'), 10);
   return isNaN(v) ? 10 : Math.min(40, Math.max(0, v));
@@ -389,14 +206,13 @@ function setPageMargin(v){
 }
 setPageMargin(getPageMargin());
 
-/* ---------- crypto ---------- */
+/* ---------- crypto (clave extraíble para poder guardar la sesión) ---------- */
 const ITERATIONS = 200000;
 async function deriveKey(password, saltBytes, iterations){
-  const enc = new TextEncoder();
-  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), {name:'PBKDF2'}, false, ['deriveKey']);
+  const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), {name:'PBKDF2'}, false, ['deriveKey']);
   return crypto.subtle.deriveKey(
     {name:'PBKDF2', salt: saltBytes, iterations: iterations, hash:'SHA-256'},
-    keyMaterial, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']
+    km, {name:'AES-GCM', length:256}, true, ['encrypt','decrypt']
   );
 }
 async function encryptBytes(key, bytes){
@@ -405,13 +221,11 @@ async function encryptBytes(key, bytes){
   return { iv: bytesToBase64(iv), data: bytesToBase64(new Uint8Array(ct)) };
 }
 async function decryptBytes(key, ivB64, dataB64){
-  const iv = base64ToBytes(ivB64);
-  const data = base64ToBytes(dataB64);
-  const pt = await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, data);
+  const pt = await crypto.subtle.decrypt({name:'AES-GCM', iv: base64ToBytes(ivB64)}, key, base64ToBytes(dataB64));
   return new Uint8Array(pt);
 }
 
-/* ---------- IndexedDB (local cache, per browser) ---------- */
+/* ---------- IndexedDB (caché local) ---------- */
 function openIDB(){
   return new Promise((resolve,reject)=>{
     const req = indexedDB.open('crm_storage', 1);
@@ -423,8 +237,7 @@ function openIDB(){
 async function idbGet(username){
   const db = await openIDB();
   return new Promise((resolve,reject)=>{
-    const tx = db.transaction('userdata','readonly');
-    const req = tx.objectStore('userdata').get(username);
+    const req = db.transaction('userdata','readonly').objectStore('userdata').get(username);
     req.onsuccess = ()=>resolve(req.result || null);
     req.onerror = ()=>reject(req.error);
   });
@@ -439,30 +252,38 @@ async function idbSet(record){
   });
 }
 
-/* ---------- users registry (localStorage cache) ---------- */
+/* ---------- usuarios (caché local) ---------- */
 function getLocalUsers(){
   try{ return JSON.parse(localStorage.getItem('crm_users')||'[]'); }catch(e){ return []; }
 }
-function saveLocalUsers(list){ localStorage.setItem('crm_users', JSON.stringify(list)); }
 function upsertLocalUser(rec){
   const list = getLocalUsers();
   const i = list.findIndex(u=>u.username===rec.username);
   if(i===-1) list.push(rec); else if((rec.updatedAt||0) >= (list[i].updatedAt||0)) list[i]=rec;
-  saveLocalUsers(list);
+  localStorage.setItem('crm_users', JSON.stringify(list));
+}
+function normUser(u){
+  return { username:String(u.username), salt:u.salt, iterations:Number(u.iterations)||ITERATIONS,
+           checkIv:u.checkIv, checkCt:u.checkCt, updatedAt:Number(u.updatedAt)||0 };
 }
 
-/* ---------- Google Sheets sync (Apps Script) ---------- */
-/* Fixed for every device — nobody needs to configure or share a link. */
+/* ---------- sesión (persiste al actualizar la página) ---------- */
+async function saveSession(username, key){
+  try{
+    const raw = await crypto.subtle.exportKey('raw', key);
+    localStorage.setItem('crm_session', JSON.stringify({ username, key: bytesToBase64(new Uint8Array(raw)) }));
+  }catch(e){ /* ignore */ }
+}
+function clearSession(){ localStorage.removeItem('crm_session'); }
+
+/* ---------- sincronización con Google Sheets (Apps Script) ---------- */
 const SYNC_URL = 'https://script.google.com/macros/s/AKfycbxXo19Df_nmlx0r127qzWO90MjOV8qa6ft7EwgoSTKNQGeWOhXkXxwAWwkiKHcQwG5d-A/exec';
-function getSyncUrl(){ return SYNC_URL; }
 
 async function apiCall(action, payload){
-  const url = getSyncUrl();
-  if(!url) return null;
   const controller = new AbortController();
   const timeoutId = setTimeout(()=>controller.abort(), 12000);
   try{
-    const res = await fetch(url, {
+    const res = await fetch(SYNC_URL, {
       method:'POST',
       headers:{'Content-Type':'text/plain;charset=utf-8'},
       body: JSON.stringify(Object.assign({action}, payload)),
@@ -470,32 +291,26 @@ async function apiCall(action, payload){
     });
     if(!res.ok) throw new Error('sync http '+res.status);
     return await res.json();
-  } finally {
-    clearTimeout(timeoutId);
-  }
+  } finally { clearTimeout(timeoutId); }
 }
-async function cloudGetUsers(){ try{ return await apiCall('getUsers', {}); }catch(e){ setSyncState('warn','Sin conexión'); return null; } }
+function setSyncState(kind, text){
+  $('sync-dot').className = 'dot ' + (kind==='ok'?'ok':(kind==='warn'?'warn':''));
+  $('sync-text').textContent = text;
+}
+async function cloudGetUsers(){
+  try{
+    const r = await apiCall('getUsers', {});
+    const list = Array.isArray(r) ? r : (r && Array.isArray(r.users) ? r.users : null);
+    return list ? list.filter(u=>u && u.username).map(normUser) : null;
+  }catch(e){ setSyncState('warn','Sin conexión'); return null; }
+}
 async function cloudSaveUser(user){ try{ await apiCall('saveUser', {user}); setSyncState('ok','Sincronizado'); }catch(e){ setSyncState('warn','Sin conexión'); } }
 async function cloudGetData(username){ try{ return await apiCall('getData', {username}); }catch(e){ setSyncState('warn','Sin conexión'); return null; } }
 async function cloudSaveData(record){ try{ await apiCall('saveData', {record}); setSyncState('ok','Sincronizado'); }catch(e){ setSyncState('warn','Sin conexión'); } }
 
-function setSyncState(kind, text){
-  const dot = document.getElementById('sync-dot');
-  const label = document.getElementById('sync-text');
-  if(!getSyncUrl()){ dot.className='dot'; label.textContent='Local'; return; }
-  dot.className = 'dot ' + (kind==='ok'?'ok':(kind==='warn'?'warn':''));
-  label.textContent = text;
-}
+/* ---------- estado ---------- */
+let SQL = null, db = null, currentUser = null, currentKey = null, editingId = null, syncTimer = null;
 
-/* ---------- app state ---------- */
-let SQL = null;
-let db = null;
-let currentUser = null;
-let currentKey = null;
-let editingId = null;
-let syncTimer = null;
-
-/* ---------- SQL helpers ---------- */
 const SCHEMA = `CREATE TABLE IF NOT EXISTS contactos (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   asesor TEXT NOT NULL,
@@ -508,9 +323,8 @@ const SCHEMA = `CREATE TABLE IF NOT EXISTS contactos (
 );`;
 
 function runQuery(sql, params){
-  params = params || [];
   const stmt = db.prepare(sql);
-  stmt.bind(params);
+  stmt.bind(params || []);
   const rows = [];
   while(stmt.step()){ rows.push(stmt.getAsObject()); }
   stmt.free();
@@ -518,14 +332,10 @@ function runQuery(sql, params){
 }
 function runExec(sql, params){ db.run(sql, params||[]); }
 
-/* ---------- persistence of current db ---------- */
-function scheduleCloudPush(){
-  clearTimeout(syncTimer);
-  syncTimer = setTimeout(pushCurrentDb, 700);
-}
+/* ---------- persistencia ---------- */
+function scheduleCloudPush(){ clearTimeout(syncTimer); syncTimer = setTimeout(pushCurrentDb, 700); }
 async function persistLocal(){
-  const bytes = db.export();
-  const enc = await encryptBytes(currentKey, bytes);
+  const enc = await encryptBytes(currentKey, db.export());
   await idbSet({ username: currentUser, iv: enc.iv, data: enc.data, updatedAt: Date.now() });
 }
 async function pushCurrentDb(){
@@ -533,206 +343,63 @@ async function pushCurrentDb(){
   if(!rec) return;
   await cloudSaveData({ username: currentUser, iv: rec.iv, ciphertext: rec.data, updatedAt: rec.updatedAt });
 }
-async function saveState(){
-  await persistLocal();
-  scheduleCloudPush();
-}
+async function saveState(){ await persistLocal(); scheduleCloudPush(); }
 
-/* ---------- auth screens ---------- */
-const authError = document.getElementById('auth-error');
-function showAuthError(msg){ authError.textContent = msg; authError.classList.remove('hidden'); }
-function clearAuthError(){ authError.classList.add('hidden'); }
-
-document.getElementById('show-signup').onclick = ()=>{
-  document.getElementById('auth-login').classList.add('hidden');
-  document.getElementById('auth-signup').classList.remove('hidden');
-  document.getElementById('auth-title').textContent = 'Crear cuenta';
-  clearAuthError();
-};
-document.getElementById('show-login').onclick = ()=>{
-  document.getElementById('auth-signup').classList.add('hidden');
-  document.getElementById('auth-login').classList.remove('hidden');
-  document.getElementById('auth-title').textContent = 'Iniciar sesión';
-  clearAuthError();
-};
-
-async function populateUserList(){
-  let users = getLocalUsers();
-  if(getSyncUrl()){
-    const cloudUsers = await cloudGetUsers();
-    if(cloudUsers){
-      cloudUsers.forEach(u=>{
-        upsertLocalUser({
-          username: u.username, salt: u.salt, iterations: Number(u.iterations)||ITERATIONS,
-          checkIv: u.checkIv, checkCt: u.checkCt, updatedAt: Number(u.updatedAt)||0
-        });
-      });
-      users = getLocalUsers();
-    }
-  }
-  const dl = document.getElementById('user-list');
-  dl.innerHTML = users.map(u=>`<option value="${escapeHtml(u.username)}">`).join('');
-}
-
-document.getElementById('btn-login').onclick = async ()=>{
-  clearAuthError();
-  const username = document.getElementById('login-user').value.trim();
-  const password = document.getElementById('login-pass').value;
-  if(!username || !password){ showAuthError('Escribe usuario y contraseña.'); return; }
-  let rec = getLocalUsers().find(u=>u.username===username);
-  if(!rec && getSyncUrl()){
-    // not cached on this device yet — ask the cloud directly before giving up
-    const cloudUsers = await cloudGetUsers();
-    if(cloudUsers){
-      cloudUsers.forEach(u=>upsertLocalUser({
-        username:u.username, salt:u.salt, iterations:Number(u.iterations)||ITERATIONS,
-        checkIv:u.checkIv, checkCt:u.checkCt, updatedAt:Number(u.updatedAt)||0
-      }));
-    }
-    rec = getLocalUsers().find(u=>u.username===username);
-  }
-  if(!rec){
-    if(!getSyncUrl()){
-      showAuthError('Ese usuario no existe en este dispositivo. Si ya lo creaste en otro dispositivo, ve a Ajustes y configura la misma URL de sincronización antes de iniciar sesión aquí.');
-    }else{
-      showAuthError('Ese usuario no existe. Crea una cuenta.');
-    }
-    return;
-  }
-  try{
-    const salt = base64ToBytes(rec.salt);
-    const key = await deriveKey(password, salt, rec.iterations||ITERATIONS);
-    const check = await decryptBytes(key, rec.checkIv, rec.checkCt);
-    if(new TextDecoder().decode(check) !== 'CRM_OK') throw new Error('bad');
-    await loginAs(username, key);
-  }catch(e){
-    showAuthError('Contraseña incorrecta.');
-  }
-};
-
-document.getElementById('btn-signup').onclick = async ()=>{
-  clearAuthError();
-  const username = document.getElementById('signup-user').value.trim();
-  const p1 = document.getElementById('signup-pass').value;
-  const p2 = document.getElementById('signup-pass2').value;
-  if(!username || !p1){ showAuthError('Completa usuario y contraseña.'); return; }
-  if(p1 !== p2){ showAuthError('Las contraseñas no coinciden.'); return; }
-  const users = getLocalUsers();
-  if(users.find(u=>u.username===username)){ showAuthError('Ese usuario ya existe.'); return; }
-  await createUser(username, p1);
-};
-
-async function createUser(username, password){
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const key = await deriveKey(password, salt, ITERATIONS);
-  const check = await encryptBytes(key, new TextEncoder().encode('CRM_OK'));
-  const rec = {
-    username, salt: bytesToBase64(salt), iterations: ITERATIONS,
-    checkIv: check.iv, checkCt: check.data, updatedAt: Date.now()
-  };
-  upsertLocalUser(rec);
-  cloudSaveUser(rec);
-  await loginAs(username, key);
-}
-
+/* ---------- entrada a la app (la sesión ya fue validada en login.html) ---------- */
 async function loginAs(username, key){
   currentUser = username;
   currentKey = key;
-  await saveSession(username, key);
-
   SQL = SQL || await initSqlJs({ locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${f}` });
 
-  // Fast path: open using whatever is already on this device. Never wait on the network to log in.
   const localRec = await idbGet(username);
   if(localRec){
-    try{
-      const bytes = await decryptBytes(key, localRec.iv, localRec.data);
-      db = new SQL.Database(bytes);
-    }catch(e){
-      db = new SQL.Database();
-    }
+    try{ db = new SQL.Database(await decryptBytes(key, localRec.iv, localRec.data)); }
+    catch(e){ db = new SQL.Database(); }
   }else{
     db = new SQL.Database();
   }
-  db.run(SCHEMA); // ensure table exists even on old backups
+  db.run(SCHEMA);
   await persistLocal();
 
-  document.getElementById('screen-auth').classList.add('hidden');
-  document.getElementById('screen-app').classList.remove('hidden');
-  document.getElementById('current-user-label').textContent = username;
+  $('screen-app').classList.remove('hidden');
+  $('current-user-label').textContent = username;
   refreshFilters();
   renderTable();
-
-  // Background: check the cloud for a newer copy without blocking the screen above.
   syncFromCloudInBackground(username, key, localRec);
 }
 
 async function syncFromCloudInBackground(username, key, localRec){
-  if(!getSyncUrl()) return;
   setSyncState('warn', 'Sincronizando…');
   const cloudRec = await cloudGetData(username);
-  if(currentUser !== username) return; // user switched/logged out while we were waiting
-  if(!cloudRec || !cloudRec.ciphertext){
-    setSyncState(getSyncUrl() ? 'warn' : '', getSyncUrl() ? 'Sin conexión' : 'Local');
-    return;
-  }
+  if(currentUser !== username) return;
+  if(!cloudRec || !cloudRec.ciphertext){ setSyncState('warn', 'Sin conexión'); return; }
   const cloudIsNewer = !localRec || Number(cloudRec.updatedAt||0) > Number(localRec.updatedAt||0);
   if(cloudIsNewer){
     try{
-      const bytes = await decryptBytes(key, cloudRec.iv, cloudRec.ciphertext);
-      db = new SQL.Database(bytes);
+      db = new SQL.Database(await decryptBytes(key, cloudRec.iv, cloudRec.ciphertext));
       db.run(SCHEMA);
       await persistLocal();
       refreshFilters();
       renderTable();
-    }catch(e){ /* corrupt/incompatible cloud copy — keep what's already showing */ }
+    }catch(e){ /* copia de la nube corrupta o incompatible: se conserva lo que ya se ve */ }
   }
   setSyncState('ok', 'Sincronizado');
 }
 
-/* ---------- keep session alive across page reloads (cleared when the tab/browser closes) ---------- */
-async function saveSession(username, key){
-  try{
-    const raw = await crypto.subtle.exportKey('raw', key);
-    sessionStorage.setItem('crm_session', JSON.stringify({ username, key: bytesToBase64(new Uint8Array(raw)) }));
-  }catch(e){ /* ignore */ }
-}
-function clearSession(){ sessionStorage.removeItem('crm_session'); }
-async function restoreSession(){
-  try{
-    const raw = sessionStorage.getItem('crm_session');
-    if(!raw) return false;
-    const parsed = JSON.parse(raw);
-    const keyBytes = base64ToBytes(parsed.key);
-    const cryptoKey = await crypto.subtle.importKey('raw', keyBytes, {name:'AES-GCM'}, false, ['encrypt','decrypt']);
-    await loginAs(parsed.username, cryptoKey);
-    return true;
-  }catch(e){
-    clearSession();
-    return false;
-  }
-}
-
-document.getElementById('btn-logout').onclick = ()=>{
-  currentUser = null; currentKey = null; db = null; editingId = null;
+$('btn-logout').onclick = ()=>{
   clearSession();
-  document.getElementById('screen-app').classList.add('hidden');
-  document.getElementById('screen-auth').classList.remove('hidden');
-  document.getElementById('login-pass').value = '';
+  location.replace(LOGIN_URL);
 };
 
-/* ---------- contact form ---------- */
-const form = document.getElementById('contact-form');
+/* ---------- formulario de contactos ---------- */
+const form = $('contact-form');
 form.addEventListener('submit', async (e)=>{
   e.preventDefault();
   const vals = {
-    cliente: document.getElementById('f-cliente').value.trim(),
-    puesto: document.getElementById('f-puesto').value.trim(),
-    nombre: document.getElementById('f-nombre').value.trim(),
-    telefono: document.getElementById('f-telefono').value.trim(),
-    correo: document.getElementById('f-correo').value.trim(),
-    direccion: document.getElementById('f-direccion').value.trim(),
-    asesor: document.getElementById('f-asesor').value.trim()
+    cliente: $('f-cliente').value.trim(), puesto: $('f-puesto').value.trim(),
+    nombre: $('f-nombre').value.trim(), telefono: $('f-telefono').value.trim(),
+    correo: $('f-correo').value.trim(), direccion: $('f-direccion').value.trim(),
+    asesor: $('f-asesor').value.trim()
   };
   if(!vals.cliente || !vals.nombre || !vals.asesor) return;
 
@@ -750,32 +417,32 @@ form.addEventListener('submit', async (e)=>{
   renderTable();
 });
 
-document.getElementById('btn-cancel-edit').onclick = ()=>{ exitEditMode(); form.reset(); };
+$('btn-cancel-edit').onclick = ()=>{ exitEditMode(); form.reset(); };
 
 function exitEditMode(){
   editingId = null;
-  document.getElementById('form-title').textContent = 'Agregar contacto';
-  document.getElementById('btn-save-contact').textContent = 'Agregar';
-  document.getElementById('btn-cancel-edit').classList.add('hidden');
+  $('form-title').textContent = 'Agregar contacto';
+  $('btn-save-contact').textContent = 'Agregar';
+  $('btn-cancel-edit').classList.add('hidden');
 }
 function enterEditMode(row){
   editingId = row.id;
-  document.getElementById('f-cliente').value = row.cliente;
-  document.getElementById('f-puesto').value = row.puesto||'';
-  document.getElementById('f-nombre').value = row.nombre||'';
-  document.getElementById('f-telefono').value = row.telefono||'';
-  document.getElementById('f-correo').value = row.correo||'';
-  document.getElementById('f-direccion').value = row.direccion||'';
-  document.getElementById('f-asesor').value = row.asesor||'';
-  document.getElementById('form-title').textContent = 'Editar contacto';
-  document.getElementById('btn-save-contact').textContent = 'Guardar cambios';
-  document.getElementById('btn-cancel-edit').classList.remove('hidden');
-  document.getElementById('f-cliente').scrollIntoView({behavior:'smooth', block:'center'});
+  $('f-cliente').value = row.cliente;
+  $('f-puesto').value = row.puesto||'';
+  $('f-nombre').value = row.nombre||'';
+  $('f-telefono').value = row.telefono||'';
+  $('f-correo').value = row.correo||'';
+  $('f-direccion').value = row.direccion||'';
+  $('f-asesor').value = row.asesor||'';
+  $('form-title').textContent = 'Editar contacto';
+  $('btn-save-contact').textContent = 'Guardar cambios';
+  $('btn-cancel-edit').classList.remove('hidden');
+  $('f-cliente').scrollIntoView({behavior:'smooth', block:'center'});
 }
 
-/* ---------- filters + cards ---------- */
-const selAsesor = document.getElementById('filter-asesor');
-const selCliente = document.getElementById('filter-cliente');
+/* ---------- filtros + tarjetas ---------- */
+const selAsesor = $('filter-asesor');
+const selCliente = $('filter-cliente');
 
 function getDistinct(column, whereAsesor){
   let sql = `SELECT DISTINCT ${column} AS v FROM contactos`;
@@ -784,33 +451,27 @@ function getDistinct(column, whereAsesor){
   sql += ` ORDER BY ${column} COLLATE NOCASE`;
   return runQuery(sql, params).map(r=>r.v);
 }
-
 function refreshFilters(keepSelection){
   const prevAsesor = keepSelection ? selAsesor.value : '';
   const asesores = getDistinct('asesor', null);
   selAsesor.innerHTML = '<option value="">Todos</option>' + asesores.map(a=>`<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
   selAsesor.value = asesores.includes(prevAsesor) ? prevAsesor : '';
   refreshClienteOptions(keepSelection);
-  refreshClienteDatalist();
+  clientesCache = getDistinct('cliente', null);
 }
 function refreshClienteOptions(keepSelection){
   const prevCliente = keepSelection ? selCliente.value : '';
-  const asesor = selAsesor.value;
-  const clientes = getDistinct('cliente', asesor || null);
+  const clientes = getDistinct('cliente', selAsesor.value || null);
   selCliente.innerHTML = '<option value="">Todos</option>' + clientes.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
   selCliente.value = clientes.includes(prevCliente) ? prevCliente : '';
 }
 let clientesCache = [];
-function refreshClienteDatalist(){
-  clientesCache = getDistinct('cliente', null);
-}
 selAsesor.addEventListener('change', ()=>{ refreshClienteOptions(false); renderTable(); });
 selCliente.addEventListener('change', renderTable);
 
-/* ---------- custom cliente autocomplete (works on all devices/browsers) ---------- */
-const fCliente = document.getElementById('f-cliente');
-const clienteSuggBox = document.getElementById('cliente-suggestions');
-
+/* ---------- autocompletado de cliente ---------- */
+const fCliente = $('f-cliente');
+const clienteSuggBox = $('cliente-suggestions');
 function showClienteSuggestions(){
   const q = fCliente.value.trim().toLowerCase();
   const matches = (q ? clientesCache.filter(c=>c.toLowerCase().includes(q)) : clientesCache).slice(0,8);
@@ -818,16 +479,10 @@ function showClienteSuggestions(){
   clienteSuggBox.innerHTML = matches.map(c=>`<div class="sugg-item">${escapeHtml(c)}</div>`).join('');
   clienteSuggBox.classList.remove('hidden');
   clienteSuggBox.querySelectorAll('.sugg-item').forEach((item, i)=>{
-    item.addEventListener('click', ()=>{
-      fCliente.value = matches[i];
-      hideClienteSuggestions();
-    });
+    item.addEventListener('click', ()=>{ fCliente.value = matches[i]; hideClienteSuggestions(); });
   });
 }
-function hideClienteSuggestions(){
-  clienteSuggBox.classList.add('hidden');
-  clienteSuggBox.innerHTML = '';
-}
+function hideClienteSuggestions(){ clienteSuggBox.classList.add('hidden'); clienteSuggBox.innerHTML = ''; }
 fCliente.addEventListener('input', showClienteSuggestions);
 fCliente.addEventListener('focus', showClienteSuggestions);
 fCliente.addEventListener('blur', ()=> setTimeout(hideClienteSuggestions, 200));
@@ -850,9 +505,9 @@ function renderTable(){
   sql += ' ORDER BY cliente COLLATE NOCASE, nombre COLLATE NOCASE';
   const rows = runQuery(sql, params);
 
-  const container = document.getElementById('cards-container');
-  const empty = document.getElementById('empty-state');
-  document.getElementById('result-count').textContent = rows.length + (rows.length===1 ? ' contacto' : ' contactos');
+  const container = $('cards-container');
+  const empty = $('empty-state');
+  $('result-count').textContent = rows.length + (rows.length===1 ? ' contacto' : ' contactos');
 
   if(rows.length === 0){
     container.innerHTML = '';
@@ -863,9 +518,7 @@ function renderTable(){
 
   container.innerHTML = rows.map(r=>`
     <div class="contact-card">
-      <div class="ccard-row row-1">
-        ${ccardField('Cliente', r.cliente)}
-      </div>
+      <div class="ccard-row row-1">${ccardField('Cliente', r.cliente)}</div>
       <div class="ccard-row row-2">
         ${ccardField('Nombre', r.nombre)}
         ${ccardField('Puesto', r.puesto)}
@@ -886,16 +539,14 @@ function renderTable(){
 
   container.querySelectorAll('[data-edit]').forEach(btn=>{
     btn.onclick = ()=>{
-      const id = Number(btn.getAttribute('data-edit'));
-      const row = runQuery('SELECT * FROM contactos WHERE id=?', [id])[0];
+      const row = runQuery('SELECT * FROM contactos WHERE id=?', [Number(btn.getAttribute('data-edit'))])[0];
       if(row) enterEditMode(row);
     };
   });
   container.querySelectorAll('[data-del]').forEach(btn=>{
     btn.onclick = async ()=>{
-      const id = Number(btn.getAttribute('data-del'));
       if(!confirm('¿Eliminar este contacto?')) return;
-      runExec('DELETE FROM contactos WHERE id=?', [id]);
+      runExec('DELETE FROM contactos WHERE id=?', [Number(btn.getAttribute('data-del'))]);
       await saveState();
       refreshFilters(true);
       renderTable();
@@ -907,48 +558,41 @@ function escapeHtml(s){
   return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-/* ---------- settings modal ---------- */
-const overlay = document.getElementById('settings-overlay');
-const marginRange = document.getElementById('page-margin-range');
-const marginValueLabel = document.getElementById('page-margin-value');
+/* ---------- ajustes ---------- */
+const overlay = $('settings-overlay');
+const marginRange = $('page-margin-range');
 
-document.getElementById('btn-settings').onclick = ()=>{
+$('btn-settings').onclick = ()=>{
   const m = getPageMargin();
   marginRange.value = m;
-  marginValueLabel.textContent = m;
+  $('page-margin-value').textContent = m;
   overlay.classList.remove('hidden');
 };
-document.getElementById('btn-close-settings').onclick = ()=> overlay.classList.add('hidden');
-
+$('btn-close-settings').onclick = ()=> overlay.classList.add('hidden');
 marginRange.addEventListener('input', ()=>{
   const v = Number(marginRange.value);
-  marginValueLabel.textContent = v;
+  $('page-margin-value').textContent = v;
   setPageMargin(v);
 });
 
-document.getElementById('btn-sync-now').onclick = async ()=>{
-  document.getElementById('sync-msg').innerHTML = '<div class="msg">Sincronizando…</div>';
+$('btn-sync-now').onclick = async ()=>{
+  $('sync-msg').innerHTML = '<div class="msg">Sincronizando…</div>';
   const myRec = getLocalUsers().find(u=>u.username===currentUser);
   if(myRec) await cloudSaveUser(myRec);
   await pushCurrentDb();
   const cloudUsers = await cloudGetUsers();
-  if(cloudUsers) cloudUsers.forEach(u=>upsertLocalUser({
-    username:u.username, salt:u.salt, iterations:Number(u.iterations)||ITERATIONS,
-    checkIv:u.checkIv, checkCt:u.checkCt, updatedAt:Number(u.updatedAt)||0
-  }));
-  document.getElementById('sync-msg').innerHTML = '<div class="msg ok">Sincronizado.</div>';
+  if(cloudUsers) cloudUsers.forEach(upsertLocalUser);
+  $('sync-msg').innerHTML = '<div class="msg ok">Sincronizado.</div>';
 };
 
-document.getElementById('btn-change-pass').onclick = async ()=>{
-  const msg = document.getElementById('cp-msg');
-  const current = document.getElementById('cp-current').value;
-  const next = document.getElementById('cp-new').value;
+$('btn-change-pass').onclick = async ()=>{
+  const msg = $('cp-msg');
+  const current = $('cp-current').value;
+  const next = $('cp-new').value;
   if(!next){ msg.innerHTML = '<div class="msg err">Escribe la nueva contraseña.</div>'; return; }
-  const users = getLocalUsers();
-  const rec = users.find(u=>u.username===currentUser);
+  const rec = getLocalUsers().find(u=>u.username===currentUser);
   try{
-    const salt = base64ToBytes(rec.salt);
-    const oldKey = await deriveKey(current, salt, rec.iterations||ITERATIONS);
+    const oldKey = await deriveKey(current, base64ToBytes(rec.salt), rec.iterations||ITERATIONS);
     const check = await decryptBytes(oldKey, rec.checkIv, rec.checkCt);
     if(new TextDecoder().decode(check) !== 'CRM_OK') throw new Error('bad');
   }catch(e){
@@ -967,36 +611,39 @@ document.getElementById('btn-change-pass').onclick = async ()=>{
   currentKey = newKey;
   await saveSession(currentUser, newKey);
   await saveState();
-  document.getElementById('cp-current').value=''; document.getElementById('cp-new').value='';
+  $('cp-current').value=''; $('cp-new').value='';
   msg.innerHTML = '<div class="msg ok">Contraseña actualizada.</div>';
 };
 
-document.getElementById('btn-new-user').onclick = async ()=>{
-  const msg = document.getElementById('nu-msg');
-  const username = document.getElementById('nu-user').value.trim();
-  const pass = document.getElementById('nu-pass').value;
+$('btn-new-user').onclick = async ()=>{
+  const msg = $('nu-msg');
+  const username = $('nu-user').value.trim();
+  const pass = $('nu-pass').value;
   if(!username || !pass){ msg.innerHTML = '<div class="msg err">Completa usuario y contraseña.</div>'; return; }
-  if(getLocalUsers().find(u=>u.username===username)){ msg.innerHTML = '<div class="msg err">Ese usuario ya existe.</div>'; return; }
+  msg.innerHTML = '<div class="msg">Verificando…</div>';
+  const same = u => u.username.toLowerCase() === username.toLowerCase();
+  const cloudUsers = await cloudGetUsers();
+  if(!cloudUsers){ msg.innerHTML = '<div class="msg err">No se pudo verificar en el servidor. Revisa tu conexión.</div>'; return; }
+  if(cloudUsers.some(same) || getLocalUsers().some(same)){ msg.innerHTML = '<div class="msg err">Ese usuario ya existe.</div>'; return; }
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const key = await deriveKey(pass, salt, ITERATIONS);
   const check = await encryptBytes(key, new TextEncoder().encode('CRM_OK'));
   const rec = { username, salt: bytesToBase64(salt), iterations: ITERATIONS, checkIv: check.iv, checkCt: check.data, updatedAt: Date.now() };
   upsertLocalUser(rec);
-  cloudSaveUser(rec);
-  document.getElementById('nu-user').value=''; document.getElementById('nu-pass').value='';
+  await cloudSaveUser(rec);
+  $('nu-user').value=''; $('nu-pass').value='';
   msg.innerHTML = '<div class="msg ok">Usuario creado. Puede iniciar sesión desde la pantalla de acceso.</div>';
 };
 
-document.getElementById('btn-export').onclick = ()=>{
-  const bytes = db.export();
-  const blob = new Blob([bytes], {type:'application/octet-stream'});
+$('btn-export').onclick = ()=>{
+  const blob = new Blob([db.export()], {type:'application/octet-stream'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = `clientes_${currentUser}_${new Date().toISOString().slice(0,10)}.sqlite`;
   a.click();
 };
-document.getElementById('btn-import').onclick = ()=> document.getElementById('import-file').click();
-document.getElementById('import-file').addEventListener('change', async (e)=>{
+$('btn-import').onclick = ()=> $('import-file').click();
+$('import-file').addEventListener('change', async (e)=>{
   const file = e.target.files[0];
   if(!file) return;
   if(!confirm('Esto reemplazará todos tus contactos actuales. ¿Continuar?')) return;
@@ -1014,10 +661,20 @@ document.getElementById('import-file').addEventListener('change', async (e)=>{
   e.target.value = '';
 });
 
-/* ---------- init ---------- */
+/* ---------- inicio: restaurar sesión o ir a login.html ---------- */
 (async ()=>{
-  const restored = await restoreSession();
-  if(!restored) populateUserList();
+  let user, key;
+  try{
+    const s = JSON.parse(localStorage.getItem('crm_session'));
+    user = s.username;
+    key = await crypto.subtle.importKey('raw', base64ToBytes(s.key), {name:'AES-GCM'}, true, ['encrypt','decrypt']);
+  }catch(e){
+    clearSession();
+    location.replace(LOGIN_URL);
+    return;
+  }
+  try{ await loginAs(user, key); }
+  catch(e){ console.error(e); alert('No se pudo cargar el directorio. Revisa tu conexión y recarga la página.'); }
 })();
 
 })();
