@@ -459,13 +459,20 @@ function getSyncUrl(){ return SYNC_URL; }
 async function apiCall(action, payload){
   const url = getSyncUrl();
   if(!url) return null;
-  const res = await fetch(url, {
-    method:'POST',
-    headers:{'Content-Type':'text/plain;charset=utf-8'},
-    body: JSON.stringify(Object.assign({action}, payload))
-  });
-  if(!res.ok) throw new Error('sync http '+res.status);
-  return res.json();
+  const controller = new AbortController();
+  const timeoutId = setTimeout(()=>controller.abort(), 12000);
+  try{
+    const res = await fetch(url, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify(Object.assign({action}, payload)),
+      signal: controller.signal
+    });
+    if(!res.ok) throw new Error('sync http '+res.status);
+    return await res.json();
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 async function cloudGetUsers(){ try{ return await apiCall('getUsers', {}); }catch(e){ setSyncState('warn','Sin conexión'); return null; } }
 async function cloudSaveUser(user){ try{ await apiCall('saveUser', {user}); setSyncState('ok','Sincronizado'); }catch(e){ setSyncState('warn','Sin conexión'); } }
@@ -631,30 +638,21 @@ async function createUser(username, password){
 async function loginAs(username, key){
   currentUser = username;
   currentKey = key;
+  await saveSession(username, key);
 
   SQL = SQL || await initSqlJs({ locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${f}` });
 
-  let localRec = await idbGet(username);
-  let cloudRec = getSyncUrl() ? await cloudGetData(username) : null;
-  let chosen = null;
-  if(cloudRec && cloudRec.ciphertext){
-    if(!localRec || Number(cloudRec.updatedAt||0) > Number(localRec.updatedAt||0)){
-      chosen = { iv: cloudRec.iv, data: cloudRec.ciphertext, updatedAt: Number(cloudRec.updatedAt)||0 };
-    }
-  }
-  if(!chosen && localRec) chosen = localRec;
-
-  if(chosen){
+  // Fast path: open using whatever is already on this device. Never wait on the network to log in.
+  const localRec = await idbGet(username);
+  if(localRec){
     try{
-      const bytes = await decryptBytes(key, chosen.iv, chosen.data);
+      const bytes = await decryptBytes(key, localRec.iv, localRec.data);
       db = new SQL.Database(bytes);
     }catch(e){
       db = new SQL.Database();
-      db.run(SCHEMA);
     }
   }else{
     db = new SQL.Database();
-    db.run(SCHEMA);
   }
   db.run(SCHEMA); // ensure table exists even on old backups
   await persistLocal();
@@ -662,13 +660,62 @@ async function loginAs(username, key){
   document.getElementById('screen-auth').classList.add('hidden');
   document.getElementById('screen-app').classList.remove('hidden');
   document.getElementById('current-user-label').textContent = username;
-  setSyncState(getSyncUrl() ? 'ok' : '', getSyncUrl() ? 'Sincronizado' : 'Local');
   refreshFilters();
   renderTable();
+
+  // Background: check the cloud for a newer copy without blocking the screen above.
+  syncFromCloudInBackground(username, key, localRec);
+}
+
+async function syncFromCloudInBackground(username, key, localRec){
+  if(!getSyncUrl()) return;
+  setSyncState('warn', 'Sincronizando…');
+  const cloudRec = await cloudGetData(username);
+  if(currentUser !== username) return; // user switched/logged out while we were waiting
+  if(!cloudRec || !cloudRec.ciphertext){
+    setSyncState(getSyncUrl() ? 'warn' : '', getSyncUrl() ? 'Sin conexión' : 'Local');
+    return;
+  }
+  const cloudIsNewer = !localRec || Number(cloudRec.updatedAt||0) > Number(localRec.updatedAt||0);
+  if(cloudIsNewer){
+    try{
+      const bytes = await decryptBytes(key, cloudRec.iv, cloudRec.ciphertext);
+      db = new SQL.Database(bytes);
+      db.run(SCHEMA);
+      await persistLocal();
+      refreshFilters();
+      renderTable();
+    }catch(e){ /* corrupt/incompatible cloud copy — keep what's already showing */ }
+  }
+  setSyncState('ok', 'Sincronizado');
+}
+
+/* ---------- keep session alive across page reloads (cleared when the tab/browser closes) ---------- */
+async function saveSession(username, key){
+  try{
+    const raw = await crypto.subtle.exportKey('raw', key);
+    sessionStorage.setItem('crm_session', JSON.stringify({ username, key: bytesToBase64(new Uint8Array(raw)) }));
+  }catch(e){ /* ignore */ }
+}
+function clearSession(){ sessionStorage.removeItem('crm_session'); }
+async function restoreSession(){
+  try{
+    const raw = sessionStorage.getItem('crm_session');
+    if(!raw) return false;
+    const parsed = JSON.parse(raw);
+    const keyBytes = base64ToBytes(parsed.key);
+    const cryptoKey = await crypto.subtle.importKey('raw', keyBytes, {name:'AES-GCM'}, false, ['encrypt','decrypt']);
+    await loginAs(parsed.username, cryptoKey);
+    return true;
+  }catch(e){
+    clearSession();
+    return false;
+  }
 }
 
 document.getElementById('btn-logout').onclick = ()=>{
   currentUser = null; currentKey = null; db = null; editingId = null;
+  clearSession();
   document.getElementById('screen-app').classList.add('hidden');
   document.getElementById('screen-auth').classList.remove('hidden');
   document.getElementById('login-pass').value = '';
@@ -918,6 +965,7 @@ document.getElementById('btn-change-pass').onclick = async ()=>{
   upsertLocalUser(newRec);
   cloudSaveUser(newRec);
   currentKey = newKey;
+  await saveSession(currentUser, newKey);
   await saveState();
   document.getElementById('cp-current').value=''; document.getElementById('cp-new').value='';
   msg.innerHTML = '<div class="msg ok">Contraseña actualizada.</div>';
@@ -967,7 +1015,10 @@ document.getElementById('import-file').addEventListener('change', async (e)=>{
 });
 
 /* ---------- init ---------- */
-populateUserList();
+(async ()=>{
+  const restored = await restoreSession();
+  if(!restored) populateUserList();
+})();
 
 })();
 </script>
