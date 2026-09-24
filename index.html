@@ -141,7 +141,7 @@
   .suggestions-dropdown{
     position:absolute;top:100%;left:0;right:0;margin-top:4px;
     background:#fff;border:1px solid var(--border);border-radius:8px;
-    max-height:180px;overflow-y:auto;
+    max-height:180px;overflow-y:auto;-webkit-overflow-scrolling:touch;
     box-shadow:0 6px 16px rgba(20,25,30,.12);
     z-index:30;
   }
@@ -173,7 +173,7 @@
   .contact-card:hover{border-color:#C7CED4;}
   .ccard-row{display:grid;gap:8px;}
   .ccard-row.row-1{grid-template-columns:1fr;}
-  .ccard-row.row-2{grid-template-columns:1fr 1fr;}
+  .ccard-row.row-2{grid-template-columns:0.8fr 1.2fr;}
   .ccard-field{min-width:0;}
   .ccard-label{
     display:block;font-size:10px;font-weight:600;color:var(--text-soft);
@@ -185,11 +185,20 @@
   }
   .ccard-row.row-1 .ccard-value{font-size:14.5px;font-weight:600;}
   .ccard-value.empty{color:#BCC3C9;font-weight:400;}
-  .contact-card .row-actions{
-    display:flex;gap:6px;margin-top:2px;
-    border-top:1px solid #EEF0F2;padding-top:8px;
+
+  .ccard-bottom{
+    display:flex;justify-content:space-between;align-items:flex-end;gap:8px;
+    margin-top:2px;border-top:1px solid #EEF0F2;padding-top:8px;
   }
-  .row-actions button{padding:5px 9px;font-size:12px;font-weight:500;}
+  .ccard-bottom .ccard-field{flex:1;min-width:0;}
+  .ccard-icons{display:flex;gap:5px;flex-shrink:0;}
+  .icon-btn{
+    background:transparent;border:1px solid var(--border);border-radius:8px;
+    width:30px;height:30px;padding:0;font-size:14px;line-height:1;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .icon-btn:hover{background:#EEF1F0;border-color:#C7CED4;}
+  .icon-btn.danger:hover{background:var(--danger-bg);border-color:var(--danger);}
 
   @media (max-width:340px){
     .ccard-row.row-2{grid-template-columns:1fr;}
@@ -540,24 +549,6 @@ document.getElementById('show-login').onclick = ()=>{
   clearAuthError();
 };
 
-document.getElementById('show-auth-sync').onclick = ()=>{
-  document.getElementById('auth-sync-url').value = getSyncUrl();
-  document.getElementById('auth-sync-msg').innerHTML = '';
-  document.getElementById('auth-sync-overlay').classList.remove('hidden');
-};
-document.getElementById('btn-close-auth-sync').onclick = ()=>{
-  document.getElementById('auth-sync-overlay').classList.add('hidden');
-};
-document.getElementById('btn-auth-save-sync').onclick = async ()=>{
-  const msg = document.getElementById('auth-sync-msg');
-  const url = document.getElementById('auth-sync-url').value.trim();
-  setSyncUrl(url);
-  if(!url){ msg.innerHTML = '<div class="msg">URL borrada. Este dispositivo solo verá usuarios locales.</div>'; return; }
-  msg.innerHTML = '<div class="msg">Buscando usuarios…</div>';
-  await populateUserList();
-  msg.innerHTML = '<div class="msg ok">Listo. Si tu usuario existe en esa cuenta de sincronización, ya puedes iniciar sesión con él aquí.</div>';
-};
-
 async function populateUserList(){
   let users = getLocalUsers();
   if(getSyncUrl()){
@@ -780,13 +771,7 @@ function showClienteSuggestions(){
   clienteSuggBox.innerHTML = matches.map(c=>`<div class="sugg-item">${escapeHtml(c)}</div>`).join('');
   clienteSuggBox.classList.remove('hidden');
   clienteSuggBox.querySelectorAll('.sugg-item').forEach((item, i)=>{
-    item.addEventListener('mousedown', (e)=>{
-      e.preventDefault();
-      fCliente.value = matches[i];
-      hideClienteSuggestions();
-    });
-    item.addEventListener('touchstart', (e)=>{
-      e.preventDefault();
+    item.addEventListener('click', ()=>{
       fCliente.value = matches[i];
       hideClienteSuggestions();
     });
@@ -798,7 +783,7 @@ function hideClienteSuggestions(){
 }
 fCliente.addEventListener('input', showClienteSuggestions);
 fCliente.addEventListener('focus', showClienteSuggestions);
-fCliente.addEventListener('blur', ()=> setTimeout(hideClienteSuggestions, 150));
+fCliente.addEventListener('blur', ()=> setTimeout(hideClienteSuggestions, 200));
 
 function ccardField(label, value){
   const v = value ? escapeHtml(value) : '';
@@ -842,12 +827,12 @@ function renderTable(){
         ${ccardField('Teléfono', r.telefono)}
         ${ccardField('Correo', r.correo)}
       </div>
-      <div class="ccard-row row-1">
+      <div class="ccard-bottom">
         ${ccardField('Dirección', r.direccion)}
-      </div>
-      <div class="row-actions">
-        <button class="secondary" data-edit="${r.id}">Editar</button>
-        <button class="danger" data-del="${r.id}">Eliminar</button>
+        <div class="ccard-icons">
+          <button class="icon-btn" data-edit="${r.id}" title="Editar" aria-label="Editar">✏️</button>
+          <button class="icon-btn danger" data-del="${r.id}" title="Eliminar" aria-label="Eliminar">🗑️</button>
+        </div>
       </div>
     </div>
   `).join('');
@@ -881,7 +866,6 @@ const marginRange = document.getElementById('page-margin-range');
 const marginValueLabel = document.getElementById('page-margin-value');
 
 document.getElementById('btn-settings').onclick = ()=>{
-  document.getElementById('sync-url').value = getSyncUrl();
   const m = getPageMargin();
   marginRange.value = m;
   marginValueLabel.textContent = m;
@@ -895,11 +879,6 @@ marginRange.addEventListener('input', ()=>{
   setPageMargin(v);
 });
 
-document.getElementById('btn-save-sync').onclick = ()=>{
-  setSyncUrl(document.getElementById('sync-url').value.trim());
-  document.getElementById('sync-msg').innerHTML = '<div class="msg ok">Guardado.</div>';
-  setSyncState(getSyncUrl()?'ok':'', getSyncUrl()?'Sincronizado':'Local');
-};
 document.getElementById('btn-sync-now').onclick = async ()=>{
   document.getElementById('sync-msg').innerHTML = '<div class="msg">Sincronizando…</div>';
   const myRec = getLocalUsers().find(u=>u.username===currentUser);
