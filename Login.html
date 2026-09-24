@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Directorio de Clientes — Acceso</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#F5F6F8;--surface:#fff;--text:#1B2430;--text-soft:#5B6472;--accent:#2C6E63;--accent-dark:#1F4E46;--border:#E1E4E8;--danger:#B3261E;--danger-bg:#FBEAEA;}
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{margin:0;font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;
+    display:flex;align-items:center;justify-content:center;padding:10px;}
+  button{font-family:inherit;cursor:pointer;border:none;border-radius:8px;padding:10px 16px;font-size:14px;font-weight:600;background:var(--accent);color:#fff;transition:background .15s ease;}
+  button:hover{background:var(--accent-dark);}
+  button:disabled{opacity:.6;cursor:wait;}
+  button.link{background:none;color:var(--accent);padding:0;font-weight:500;}
+  button.link:hover{background:none;text-decoration:underline;}
+  input{width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:14px;background:#fff;color:var(--text);}
+  input:focus{outline:2px solid var(--accent);outline-offset:1px;}
+  label{font-size:12.5px;font-weight:600;color:var(--text-soft);display:block;margin-bottom:4px;}
+  .field{margin-bottom:12px;}
+  .hidden{display:none !important;}
+  .auth-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:36px 32px;width:100%;max-width:380px;}
+  .auth-card h1{font-size:20px;margin:0 0 4px;}
+  .auth-card p.sub{color:var(--text-soft);font-size:13px;margin:0 0 24px;}
+  .auth-error{background:var(--danger-bg);color:var(--danger);padding:10px 12px;border-radius:8px;font-size:13px;margin-bottom:14px;}
+  .auth-toggle{text-align:center;margin-top:16px;font-size:13px;color:var(--text-soft);}
+</style>
+</head>
+<body>
+<div class="auth-card">
+  <h1 id="auth-title">Iniciar sesión</h1>
+  <p class="sub">Directorio de clientes — acceso privado</p>
+  <div id="auth-error" class="auth-error hidden"></div>
+
+  <div id="auth-login">
+    <div class="field">
+      <label for="login-user">Usuario</label>
+      <input list="user-list" id="login-user" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="tu usuario">
+      <datalist id="user-list"></datalist>
+    </div>
+    <div class="field">
+      <label for="login-pass">Contraseña</label>
+      <input type="password" id="login-pass" autocomplete="current-password">
+    </div>
+    <button id="btn-login" style="width:100%">Entrar</button>
+    <div class="auth-toggle">¿No tienes cuenta? <button class="link" id="show-signup">Crear una</button></div>
+  </div>
+
+  <div id="auth-signup" class="hidden">
+    <div class="field">
+      <label for="signup-user">Elige un usuario</label>
+      <input id="signup-user" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
+    </div>
+    <div class="field">
+      <label for="signup-pass">Elige una contraseña</label>
+      <input type="password" id="signup-pass" autocomplete="new-password">
+    </div>
+    <div class="field">
+      <label for="signup-pass2">Confirma la contraseña</label>
+      <input type="password" id="signup-pass2" autocomplete="new-password">
+    </div>
+    <button id="btn-signup" style="width:100%">Crear cuenta</button>
+    <div class="auth-toggle">¿Ya tienes cuenta? <button class="link" id="show-login">Iniciar sesión</button></div>
+  </div>
+</div>
+
+<script>
+(function(){
+const $ = id => document.getElementById(id);
+const APP_URL = 'index.html';
+const ITERATIONS = 200000;
+const SYNC_URL = 'https://script.google.com/macros/s/AKfycbxXo19Df_nmlx0r127qzWO90MjOV8qa6ft7EwgoSTKNQGeWOhXkXxwAWwkiKHcQwG5d-A/exec';
+
+// Si ya hay sesión guardada, ir directo a la app
+if(localStorage.getItem('crm_session')){ location.replace(APP_URL); return; }
+
+/* ---------- base64 ---------- */
+function bytesToBase64(bytes){
+  let bin=''; const chunk=0x8000;
+  for(let i=0;i<bytes.length;i+=chunk){ bin+=String.fromCharCode.apply(null, bytes.subarray(i,i+chunk)); }
+  return btoa(bin);
+}
+function base64ToBytes(b64){
+  const bin=atob(b64); const bytes=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++){ bytes[i]=bin.charCodeAt(i); }
+  return bytes;
+}
+
+/* ---------- crypto (la clave es extraíble para poder guardar la sesión) ---------- */
+async function deriveKey(password, saltBytes, iterations){
+  const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), {name:'PBKDF2'}, false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    {name:'PBKDF2', salt:saltBytes, iterations:iterations, hash:'SHA-256'},
+    km, {name:'AES-GCM', length:256}, true, ['encrypt','decrypt']
+  );
+}
+async function encryptBytes(key, bytes){
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, bytes);
+  return { iv: bytesToBase64(iv), data: bytesToBase64(new Uint8Array(ct)) };
+}
+async function decryptBytes(key, ivB64, dataB64){
+  const pt = await crypto.subtle.decrypt({name:'AES-GCM', iv: base64ToBytes(ivB64)}, key, base64ToBytes(dataB64));
+  return new Uint8Array(pt);
+}
+async function saveSession(username, key){
+  const raw = await crypto.subtle.exportKey('raw', key);
+  localStorage.setItem('crm_session', JSON.stringify({ username, key: bytesToBase64(new Uint8Array(raw)) }));
+}
+
+/* ---------- usuarios: caché local + nube ---------- */
+function getLocalUsers(){ try{ return JSON.parse(localStorage.getItem('crm_users')||'[]'); }catch(e){ return []; } }
+function setLocalUser(rec){
+  const list = getLocalUsers();
+  const i = list.findIndex(u=>u.username===rec.username);
+  if(i===-1) list.push(rec); else list[i]=rec;
+  localStorage.setItem('crm_users', JSON.stringify(list));
+}
+function normUser(u){
+  return { username:String(u.username), salt:u.salt, iterations:Number(u.iterations)||ITERATIONS,
+           checkIv:u.checkIv, checkCt:u.checkCt, updatedAt:Number(u.updatedAt)||0 };
+}
+async function apiCall(action, payload){
+  const controller = new AbortController();
+  const t = setTimeout(()=>controller.abort(), 12000);
+  try{
+    const res = await fetch(SYNC_URL, {
+      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify(Object.assign({action}, payload)), signal: controller.signal
+    });
+    if(!res.ok) throw new Error('http '+res.status);
+    return await res.json();
+  } finally { clearTimeout(t); }
+}
+// Devuelve la lista de usuarios de la nube, o null si no se pudo consultar
+async function cloudUsers(){
+  try{
+    const r = await apiCall('getUsers', {});
+    const list = Array.isArray(r) ? r : (r && Array.isArray(r.users) ? r.users : null);
+    return list ? list.filter(u=>u && u.username).map(normUser) : null;
+  }catch(e){ return null; }
+}
+
+/* ---------- UI ---------- */
+const errBox = $('auth-error');
+function showErr(m){ errBox.textContent = m; errBox.classList.remove('hidden'); }
+function clearErr(){ errBox.classList.add('hidden'); }
+function busy(btn, on, text){
+  if(on){ btn.dataset.t = btn.textContent; btn.textContent = text; btn.disabled = true; }
+  else { btn.textContent = btn.dataset.t || btn.textContent; btn.disabled = false; }
+}
+function switchTo(signup){
+  $('auth-login').classList.toggle('hidden', signup);
+  $('auth-signup').classList.toggle('hidden', !signup);
+  $('auth-title').textContent = signup ? 'Crear cuenta' : 'Iniciar sesión';
+  clearErr();
+}
+$('show-signup').onclick = ()=>switchTo(true);
+$('show-login').onclick = ()=>switchTo(false);
+[['login-pass','btn-login'],['signup-pass2','btn-signup']].forEach(([i,b])=>{
+  $(i).addEventListener('keydown', e=>{ if(e.key==='Enter') $(b).click(); });
+});
+
+function fillUserList(){
+  const dl = $('user-list'); dl.innerHTML = '';
+  getLocalUsers().forEach(u=>{ const o = document.createElement('option'); o.value = u.username; dl.appendChild(o); });
+}
+fillUserList();
+cloudUsers().then(list=>{ if(list){ list.forEach(setLocalUser); fillUserList(); } });
+
+/* ---------- iniciar sesión: primero se consulta la nube ---------- */
+$('btn-login').onclick = async function(){
+  clearErr();
+  const name = $('login-user').value.trim();
+  const pass = $('login-pass').value;
+  if(!name || !pass){ showErr('Escribe usuario y contraseña.'); return; }
+  busy(this, true, 'Verificando…');
+  try{
+    const same = u => u.username.toLowerCase() === name.toLowerCase();
+    const cloud = await cloudUsers();
+    const cands = [];
+    const c = cloud && cloud.find(same);
+    if(c) cands.push({rec:c, fromCloud:true});
+    const l = getLocalUsers().find(same);
+    if(l && !(c && l.salt===c.salt && l.checkCt===c.checkCt)) cands.push({rec:l, fromCloud:false});
+    if(!cands.length){
+      showErr(cloud ? 'Ese usuario no existe. Crea una cuenta.' : 'No se pudo consultar el servidor. Revisa tu conexión e inténtalo de nuevo.');
+      return;
+    }
+    for(const {rec, fromCloud} of cands){
+      try{
+        const key = await deriveKey(pass, base64ToBytes(rec.salt), rec.iterations);
+        const chk = await decryptBytes(key, rec.checkIv, rec.checkCt);
+        if(new TextDecoder().decode(chk) !== 'CRM_OK') continue;
+        if(fromCloud) setLocalUser(rec);
+        await saveSession(rec.username, key);
+        location.replace(APP_URL);
+        return;
+      }catch(e){ /* probar el siguiente candidato */ }
+    }
+    showErr('Contraseña incorrecta.');
+  } finally { busy(this, false); }
+};
+
+/* ---------- crear cuenta: se verifica en la nube que el usuario no exista ---------- */
+$('btn-signup').onclick = async function(){
+  clearErr();
+  const name = $('signup-user').value.trim();
+  const p1 = $('signup-pass').value, p2 = $('signup-pass2').value;
+  if(!name || !p1){ showErr('Completa usuario y contraseña.'); return; }
+  if(p1 !== p2){ showErr('Las contraseñas no coinciden.'); return; }
+  busy(this, true, 'Creando…');
+  try{
+    const same = u => u.username.toLowerCase() === name.toLowerCase();
+    const cloud = await cloudUsers();
+    if(!cloud){ showErr('No se pudo verificar si el usuario ya existe. Revisa tu conexión.'); return; }
+    if(cloud.some(same) || getLocalUsers().some(same)){ showErr('Ese usuario ya existe.'); return; }
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const key = await deriveKey(p1, salt, ITERATIONS);
+    const check = await encryptBytes(key, new TextEncoder().encode('CRM_OK'));
+    const rec = { username:name, salt:bytesToBase64(salt), iterations:ITERATIONS,
+                  checkIv:check.iv, checkCt:check.data, updatedAt:Date.now() };
+    try{ await apiCall('saveUser', {user:rec}); }
+    catch(e){ showErr('No se pudo guardar la cuenta en el servidor. Inténtalo de nuevo.'); return; }
+    setLocalUser(rec);
+    await saveSession(name, key);
+    location.replace(APP_URL);
+  } finally { busy(this, false); }
+};
+})();
+</script>
+</body>
+</html>
