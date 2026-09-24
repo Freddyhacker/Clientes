@@ -1,0 +1,10 @@
+/* login.css — estilos solo de la pantalla de inicio de sesión */
+body{display:flex;align-items:center;justify-content:center;padding:10px;}
+button:disabled{opacity:.6;cursor:wait;}
+button.link{background:none;color:var(--accent);padding:0;font-weight:500;}
+button.link:hover{background:none;text-decoration:underline;}
+.auth-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:36px 32px;width:100%;max-width:380px;}
+.auth-card h1{font-size:20px;margin:0 0 4px;}
+.auth-card p.sub{color:var(--text-soft);font-size:13px;margin:0 0 24px;}
+.auth-error{background:var(--danger-bg);color:var(--danger);padding:10px 12px;border-radius:8px;font-size:13px;margin-bottom:14px;}
+.auth-toggle{text-align:center;margin-top:16px;font-size:13px;color:var(--text-soft);}
