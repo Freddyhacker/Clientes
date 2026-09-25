@@ -1,6 +1,13 @@
 // comun.js — código compartido por login.js y app.js (cifrado, usuarios, sesión y conexión con Google Sheets).
 // Debe cargarse ANTES que login.js / app.js.
 
+/* ---------- instalable (PWA) ---------- */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch((e) => console.error('sw.js', e));
+  });
+}
+
 /* ---------- base64 ---------- */
 function bytesToBase64(bytes){
   let bin=''; const chunk=0x8000;
